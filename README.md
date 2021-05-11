@@ -1,2 +1,2 @@
-# Normalizing-_flows
+# Normalizing_flows
 Normilising flows generative models 
