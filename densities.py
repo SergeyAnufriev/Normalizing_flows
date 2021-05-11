@@ -1,21 +1,29 @@
-import torch
-import math
+import numpy as np
 
-w1 = lambda z: torch.sin(2 * math.pi * z[:, 0] / 4)
+w_list     = [0.2,0.1,0.7]
+covar_list = [[[0.2,0],[0,0.2]]]*3
+means      = [[1,0],[0,0],[0,1]]
 
-def density_ring(z):
-    z1, z2 = torch.chunk(z, chunks=2, dim=1)
-    norm = torch.sqrt(z1 ** 2 + z2 ** 2)
-    exp1 = torch.exp(-0.5 * ((z1 - 2) / 0.8) ** 2)
-    exp2 = torch.exp(-0.5 * ((z1 + 2) / 0.8) ** 2)
-    u = 0.5 * ((norm - 4) / 0.4) ** 2 - torch.log(exp1 + exp2)
-    return torch.exp(-u)
+def sample_gaus_mixture(w_list,m_list,covar_list,n_samples):
 
-def density_wave(z):
-    z = torch.reshape(z, [z.shape[0], 2])
-    z1, z2 = z[:, 0], z[:, 1]
-    u = 0.5 * ((z2 - w1(z))/0.4) ** 2
-    u[torch.abs(z1) > 4] = 1e8
-    return torch.exp(-u)
+    '''P(X) = w1*N(X|m1,var1)+w2*N(X|m2,var2)+w3*N(X|m3,var3)
+    w_list   = [w1,w2,w3]
+    var_list = [var1,var2,var3]
+    n_sample - number samples from P(X)'''
+
+    mixture_idx = np.random.choice(3,size=n_samples,p= w_list)
+
+    samples_x = []
+    samples_y = []
+
+    for i in mixture_idx:
+        xy = np.random.multivariate_normal(m_list[i], covar_list[i], (1, 1))[0][0]
+        samples_x.append(xy[0])
+        samples_y.append(xy[1])
+
+    return np.array([samples_x,samples_y]).T
+
+print(sample_gaus_mixture(w_list,means,covar_list,1000))
+
 
 

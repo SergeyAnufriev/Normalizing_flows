@@ -95,10 +95,8 @@ def loss(density, zk, log_jacobians):
        Input: z_k         - trnsformed z by f1,f2,f3,...,fn
             log_jacobians - above self.log_det
             density       - density function of the target distribution
-
        Returns -log P_q0(z_0):
-
-       Output:log P(X)'''
+       '''
 
     sum_of_log_jacobians = sum(log_jacobians)
     return (-sum_of_log_jacobians - torch.log(density(zk) + 1e-9)).mean()
