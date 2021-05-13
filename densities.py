@@ -1,8 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 
 w_list     = [0.2,0.1,0.7]
 covar_list = [[[0.2,0],[0,0.2]]]*3
-means      = [[1,0],[0,0],[0,1]]
+means      = [[10,10],[0,0],[-5,-5]]
 
 def sample_gaus_mixture(w_list,m_list,covar_list,n_samples):
 
@@ -23,7 +25,10 @@ def sample_gaus_mixture(w_list,m_list,covar_list,n_samples):
 
     return np.array([samples_x,samples_y]).T
 
-print(sample_gaus_mixture(w_list,means,covar_list,1000))
-
-
-
+X = sample_gaus_mixture(w_list,means,covar_list,2000)
+xlim, ylim = [-10, 10], [-10, 10]
+plt.scatter(X[:, 0], X[:, 1], s=10, color='red')
+plt.xlim(xlim)
+plt.title('Gaussian Mixture Model')
+plt.ylim(ylim);
+plt.show()
