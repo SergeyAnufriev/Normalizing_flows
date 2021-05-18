@@ -125,7 +125,7 @@ class Norm_flow_model(nn.Module):
 
           '''list of flow objects
           represents [f_n,f_(n-1),...,f_1] sequence  '''
-          self.bijectors = nn.Modulelist(bijectros.reverse())
+          self.bijectors = nn.ModuleList(bijectros.reverse())
 
           '''Normilizing flow probability transformation
           reprsents [f_1,f_2,...,f_n]'''

@@ -22,10 +22,24 @@ means      = [[10,10],[0,0],[-5,-5]]
 
 n_samples  = 512
 
-for i in range(epochs):
+x = sample_gaus_mixture(w_list,means,covar_list,n_samples)
+x = torch.tensor(x,device=device,dtype=torch.float32)
 
-    x = sample_gaus_mixture(w_list,covar_list,means,n_samples)
-    x = torch.tensor(x,device=device)
-    z_0,log_det_Jacob = model(x)
-    L                 = loss(ref_distr,z_0,log_det_Jacob)
-    L.backward()
+print('x',x)
+model = AffineCouplingFlow(2)
+print('model(x)',model(x))
+
+print(model._inverse(x))
+print(model.log_abs_det_jacobian(x))
+
+
+'''
+z, log_det = model(x)
+
+print('x',x)
+print('z',z)
+print('log_det',log_det)
+
+print(len(model.bijectors))
+
+'''
