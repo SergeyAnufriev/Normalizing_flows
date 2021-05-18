@@ -1,11 +1,18 @@
 from flows import AffineCouplingFlow
 import torch.distributions as distrib
 import torch
+import numpy as np
 
 
-Flow = AffineCouplingFlow(2)
-q0 = distrib.MultivariateNormal(torch.zeros(2), torch.eye(2))
-q1 = distrib.TransformedDistribution(q0,Flow)
 
+from flows import ReverseFlow
 
-print(q1.log_prob(torch.rand((2,2))))
+flow = ReverseFlow(2)
+
+z = torch.rand((4,2))
+
+print('original flow',z)
+print('reversed flow',flow(z))
+
+print('go back',flow._inverse(flow(z)))
+

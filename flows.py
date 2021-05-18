@@ -32,6 +32,7 @@ class Flow(transform.Transform, nn.Module):
 class AffineCouplingFlow(Flow):
     '''paper - https://arxiv.org/pdf/1605.08803.pdf'''
     def __init__(self,dim, n_hidden=64, n_layers=3, activation=nn.ReLU):
+        '''s and t share input only'''
         super(AffineCouplingFlow,self).__init__()
         '''d - first d dimentions go inside s and t networks, 
         the other dim-d get updated by s and t'''
@@ -53,47 +54,37 @@ class AffineCouplingFlow(Flow):
             net.append(activation())
         return nn.Sequential(*net)
 
-
-    def _call(self,x):
+    def _call(self,z):
         ''' Forward transformation
           Input:  Latent variable from known prior distr
           Output: Generated data like from target distr
           '''
 
         '''split input by dimention, Paper equation 4'''
-        x_d, x_D = x[:, :self.d], x[:, self.d:]
+        x_d, z_D = z[:, :self.d], z[:, self.d:]
         '''Paper equation 5'''
-        X_transformed = x_D * torch.exp(self.s(x_d)) + self.t(x_d)
-        return torch.cat((x_d, X_transformed), dim = 1)
+        z_transformed = z_D * torch.exp(self.s(x_d)) + self.t(x_d)
+        return torch.cat((x_d, z_transformed), dim = 1)
 
-    def _inverse(self,y):
+    def _inverse(self,x):
         ''' Inverse transformation
           Input:  Data from target distribution
           Output: Data in latent space with known prior distr'''
 
         '''split input by dimention, paper equation 8a'''
-        y_d, y_D = y[:, :self.d], y[:, self.d:]
+        z_d, x_D = x[:, :self.d], x[:, self.d:]
         '''paper equation 8b'''
-        y_transformed = (y_D-self.t(y_d))/self.s(y_d)
-        return torch.cat((y_d, y_transformed), dim = 1)
+        x_transformed = (x_D-self.t(z_d))/self.s(z_d)
+        return torch.cat((z_d, x_transformed), dim = 1)
 
-    def log_abs_det_jacobian(self,x,y):
-        '''Input: real data x
-          Output:log_det(df_dz)'''
-        x_d = x[:,:self.d]
+    def log_abs_det_jacobian(self,*args):
+        '''Input: Latent variable from known prior distr
+          Output:log_det(df_dz), paper -> summation under equation 6'''
+        z   = args[0]
+        z_d = z[:,:self.d]
         '''summation under equation 6'''
-        return -torch.sum(torch.abs(self.s(x_d)))
+        return torch.sum(self.s(z_d),dim=-1)
 
-
-
-
-    '''
-    def log_abs_det_jacobian(self, x, y):
-        """
-        Computes the log det jacobian `log |dy/dx|` given input and output.
-        """
-        raise NotImplementedError
-    '''
 
 class ReverseFlow(Flow):
 
@@ -108,7 +99,8 @@ class ReverseFlow(Flow):
     def _inverse(self, z):
         return z[:, self.inverse]
 
-    def log_abs_det_jacobian(self, z):
+    def log_abs_det_jacobian(self, *args):
+        z = args[0]
         return torch.zeros(z.shape[0], 1)
 
 
@@ -117,59 +109,39 @@ class Norm_flow_model(nn.Module):
       '''Main model class, assambled
       by series of flows defined above'''
 
-      def __init__(self,bijectros,density):
+      def __init__(self,blocks,flow_length,density):
           super().__init__()
 
-          self.bijectors = nn.Modulelist(bijectros)
+          bijectros = []
+
+          for f in range(flow_length):
+              for b_flow in blocks:
+                  bijectros.append(b_flow)
+
           '''list of flow objects
-          representating f1,f2,f3,...,fn '''
+          representating f1,f2,f3,...,fn sequence  '''
+          self.bijectors = nn.Modulelist(bijectros)
 
-          self.transform = transform(bijectros)
           '''Normilizing flow probability transformation'''
+          self.transform = transform.ComposeTransform(bijectros)
 
-          self.base_density  = density
           '''density of variable z, with known density function, usually mult var gauss with diag covar matrix'''
+          self.base_density  = density
 
-          self.final_density = distrib.TransformedDistribution(density, self.transforms)
           '''density of target variable x,obtained by transfroming z WITH f1,f2,f3,...,fn'''
+          self.final_density = distrib.TransformedDistribution(density, self.transforms)
 
+          '''sum of log_det of df_inv_i/dX_(i-1) for i in range k, where k is the flow number'''
           self.log_det = []
 
-      def forward(self,z):
+      def forward(self,x):
+          '''Input: Real data sample X
+             Output: z_0, [log_abs_det(df_i/df_z_(i-1) for i in range(k)],
+             where z_0 transformed real data sample x by sequence of
+             inverse flows f_inv_k * f_inv_k-1 * ... * f_inv_1 (x)'''
 
-          '''self.log_det is a list of
-          df1_dz1,df2_dz2,...,df_n_dz_n
-          where z_n = f_n(z_(n-1))
-          '''
-
-          return 'f1(f2(f3,...,fn(z))), self.log_det'
-
-
-def loss(density, zk, log_jacobians):
-
-    '''Nomilising flow Loss function
-       Input: z_k         - trnsformed z by f1,f2,f3,...,fn
-            log_jacobians - above self.log_det
-            density       - density function of the target distribution
-       Returns -log P_q0(z_0):
-       '''
-
-    sum_of_log_jacobians = sum(log_jacobians)
-    return (-sum_of_log_jacobians - torch.log(density(zk) + 1e-9)).mean()
-
-
-'''To do
-
-   a) Implement:
-   
-   1) Affine Coupling Flow
-   2) Radial flow 
-   3) Reverse & shuffle flow 
-   4) Plannar flow 
-   5) Batch norm flow 
-   6) Autoregressive flow 
-   
-   b) 
-   Try to compose a flow from multiple above
-   
-   '''
+          z = x
+          for biject in self.bijectors:
+              z = biject._inverse(z)
+              self.log_det.append(biject.log_abs_det_jacobian(z))
+          return z, self.log_det

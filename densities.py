@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn import datasets
+
 plt.style.use('ggplot')
 
 w_list     = [0.2,0.1,0.7]
@@ -32,3 +35,19 @@ plt.xlim(xlim)
 plt.title('Gaussian Mixture Model')
 plt.ylim(ylim);
 plt.show()
+
+''' Tutorial works on noisy moons'''
+
+n_samples = 2000
+
+# Define distribution.
+noisy_moons = datasets.make_moons(n_samples=n_samples, noise=.05)
+X, y = noisy_moons
+X = StandardScaler().fit_transform(X)
+
+# Plot.
+xlim, ylim = [-2, 2], [-2, 2]
+plt.scatter(X[:, 0], X[:, 1], s=10, color='red')
+plt.xlim(xlim)
+plt.title('Noisy two moons distribution')
+plt.ylim(ylim);
