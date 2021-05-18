@@ -107,8 +107,13 @@ class Norm_flow_model(nn.Module):
 
       '''Main model class, assambled
       by series of flows defined above'''
+      '''dim - dimnention of z and x 
+      blocks - reapeating flow functions (list of python classes, which represent
+                                                            flow transformation)
+      flow_length - number of blocks
+      density - random number, i.e density function of z'''
 
-      def __init__(self,blocks,flow_length,density):
+      def __init__(self,dim,blocks,flow_length,density):
           super().__init__()
 
           '''List containing [f1,f2,f3,f4,...,f_n], where f is the flow transform'''
@@ -116,7 +121,7 @@ class Norm_flow_model(nn.Module):
 
           for f in range(flow_length):
               for b_flow in blocks:
-                  bijectros.append(b_flow)
+                  bijectros.append(b_flow(dim))
 
           '''list of flow objects
           represents [f_n,f_(n-1),...,f_1] sequence  '''
