@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.distributions as distrib
 import torch.distributions.transforms as transform
 from torch.distributions import constraints
@@ -112,6 +111,7 @@ class Norm_flow_model(nn.Module):
       def __init__(self,blocks,flow_length,density):
           super().__init__()
 
+          '''List containing [f1,f2,f3,f4,...,f_n], where f is the flow transform'''
           bijectros = []
 
           for f in range(flow_length):
@@ -119,26 +119,28 @@ class Norm_flow_model(nn.Module):
                   bijectros.append(b_flow)
 
           '''list of flow objects
-          representating f1,f2,f3,...,fn sequence  '''
-          self.bijectors = nn.Modulelist(bijectros)
+          represents [f_n,f_(n-1),...,f_1] sequence  '''
+          self.bijectors = nn.Modulelist(bijectros.reverse())
 
-          '''Normilizing flow probability transformation'''
-          self.transform = transform.ComposeTransform(bijectros)
+          '''Normilizing flow probability transformation
+          reprsents [f_1,f_2,...,f_n]'''
+          self.transforms = transform.ComposeTransform(bijectros)
 
-          '''density of variable z, with known density function, usually mult var gauss with diag covar matrix'''
+          '''density of variable z_0, with known density function, usually mult var gauss with diag covar matrix'''
           self.base_density  = density
 
-          '''density of target variable x,obtained by transfroming z WITH f1,f2,f3,...,fn'''
+          '''density of target variable z_n = f_n * f_(n_1) **** f_1(z_0)'''
           self.final_density = distrib.TransformedDistribution(density, self.transforms)
 
-          '''sum of log_det of df_inv_i/dX_(i-1) for i in range k, where k is the flow number'''
+          '''list : [log_det_df_i/dz_(i-1) for i in range n] , where n is the flow number'''
           self.log_det = []
 
       def forward(self,x):
           '''Input: Real data sample X
              Output: z_0, [log_abs_det(df_i/df_z_(i-1) for i in range(k)],
+
              where z_0 transformed real data sample x by sequence of
-             inverse flows f_inv_k * f_inv_k-1 * ... * f_inv_1 (x)'''
+             inverse flows z_0 = f_inv_1 * f_inv_2 * ... * f_inv_n (x)'''
 
           z = x
           for biject in self.bijectors:
