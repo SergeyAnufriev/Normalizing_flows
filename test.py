@@ -54,3 +54,4 @@ log_abs_det_k_2 = flow_k_1.log_abs_det_jacobian(z_k_2)
 print('z_k_2={}'.format(z_k_2))
 print('log_abs_det_={}'.format(log_abs_det_k_2))
 
+print('hello')
