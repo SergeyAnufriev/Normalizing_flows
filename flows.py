@@ -125,7 +125,7 @@ class Norm_flow_model(nn.Module):
 
           '''list of flow objects
           represents [f_n,f_(n-1),...,f_1] sequence  '''
-          self.bijectors = nn.ModuleList(bijectros.reverse())
+          self.bijectors = nn.ModuleList(bijectros)
 
           '''Normilizing flow probability transformation
           reprsents [f_1,f_2,...,f_n]'''
@@ -148,7 +148,8 @@ class Norm_flow_model(nn.Module):
              inverse flows z_0 = f_inv_1 * f_inv_2 * ... * f_inv_n (x)'''
 
           z = x
-          for biject in self.bijectors:
-              z = biject._inverse(z)
-              self.log_det.append(biject.log_abs_det_jacobian(z))
+          l = len(self.bijectors)
+          for i in range(l):
+              z = self.bijectors[l-1-i]._inverse(z)
+              self.log_det.append(self.bijectors[l-1-i].log_abs_det_jacobian(z))
           return z, self.log_det
