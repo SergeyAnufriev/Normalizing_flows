@@ -35,3 +35,22 @@ print('Multi flow test')
 z_0, list_logdet_jacob = model_mult(x)
 print('mult flow z_0={}'.format(z_0))
 print('mult flow, jacob list,f(z)={}'.format(list_logdet_jacob))
+
+print('test first mult_flow inverse iteration')
+flow_k      = model_mult.bijectors[-1]
+z_k_1       = flow_k._inverse(x)
+log_abs_det_k_1 = flow_k.log_abs_det_jacobian(z_k_1)
+
+print('z_k_1={}'.format(z_k_1))
+print('x={}'.format(x))
+print('log_abs_det={}'.format(log_abs_det_k_1))
+
+
+print('test second mult_flow inverse iteration')
+flow_k_1   = model_mult.bijectors[-2]
+z_k_2      = flow_k_1._inverse(z_k_1)
+log_abs_det_k_2 = flow_k_1.log_abs_det_jacobian(z_k_2)
+
+print('z_k_2={}'.format(z_k_2))
+print('log_abs_det_={}'.format(log_abs_det_k_2))
+

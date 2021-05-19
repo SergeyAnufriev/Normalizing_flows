@@ -36,8 +36,7 @@ plt.title('Gaussian Mixture Model')
 plt.ylim(ylim);
 plt.show()
 
-''' Tutorial works on noisy moons'''
-
+'''
 n_samples = 2000
 
 # Define distribution.
@@ -51,3 +50,4 @@ plt.scatter(X[:, 0], X[:, 1], s=10, color='red')
 plt.xlim(xlim)
 plt.title('Noisy two moons distribution')
 plt.ylim(ylim);
+'''
