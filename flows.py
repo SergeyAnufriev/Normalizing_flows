@@ -37,9 +37,7 @@ class AffineCouplingFlow(Flow):
         the other dim-d get updated by s and t'''
         self.d  = dim//2
         ''' self.s - scale tranformation,  function from R^d to R^dim-d, where dim is the data size'''
-        self.s = self.transform_net(self.d,dim-self.d,n_hidden,n_layers,activation)
-        ''' self.t - translate transformation, function from R^d to R^dim-d'''
-        self.t  = self.transform_net(self.d,dim-self.d,n_hidden,n_layers,activation)
+        self.shift_log_scale = self.transform_net(self.d,(dim-self.d)*2,n_hidden,n_layers,activation)
         '''Init weight as in parent flow class'''
         self.init_parameters()
         '''domain and codomain of the transformation f'''
@@ -62,7 +60,11 @@ class AffineCouplingFlow(Flow):
         '''split input by dimention, Paper equation 4'''
         x_d, z_D = z[:, :self.d], z[:, self.d:]
         '''Paper equation 5'''
-        z_transformed = z_D * torch.exp(self.s(x_d)) + self.t(x_d)
+        net_out           = self.shift_log_scale(x_d)
+        shift             = net_out[:, :1]
+        log_scale         = net_out[:, 1:]
+
+        z_transformed = z_D * torch.exp(log_scale) + shift
         return torch.cat((x_d, z_transformed), dim = 1)
 
     def _inverse(self,x):
@@ -73,7 +75,11 @@ class AffineCouplingFlow(Flow):
         '''split input by dimention, paper equation 8a'''
         z_d, x_D = x[:, :self.d], x[:, self.d:]
         '''paper equation 8b'''
-        x_transformed = (x_D-self.t(z_d))/self.s(z_d)
+        net_out           = self.shift_log_scale(z_d)
+        shift             =  net_out[:, :1]
+        log_scale         =  net_out[:, 1:]
+
+        x_transformed = (x_D-shift)/log_scale
         return torch.cat((z_d, x_transformed), dim = 1)
 
     def log_abs_det_jacobian(self,*args):
@@ -82,7 +88,7 @@ class AffineCouplingFlow(Flow):
         z   = args[0]
         z_d = z[:,:self.d]
         '''summation under equation 6'''
-        return torch.sum(self.s(z_d),dim=-1)
+        return torch.sum(self.shift_log_scale(z_d)[:, 1:],dim=-1)
 
 
 class ReverseFlow(Flow):
@@ -113,15 +119,14 @@ class Norm_flow_model(nn.Module):
       flow_length - number of blocks
       density - random number, i.e density function of z'''
 
-      def __init__(self,dim,blocks,flow_length,density):
+      def __init__(self,dim,blocks,density):
           super().__init__()
 
           '''List containing [f1,f2,f3,f4,...,f_n], where f is the flow transform'''
           bijectros = []
 
-          for f in range(flow_length):
-              for b_flow in blocks:
-                  bijectros.append(b_flow(dim))
+          for b_flow in blocks:
+              bijectros.append(b_flow(dim))
 
           '''list of flow objects
           represents [f_n,f_(n-1),...,f_1] sequence  '''
