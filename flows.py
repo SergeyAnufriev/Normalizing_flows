@@ -97,6 +97,8 @@ class ReverseFlow(Flow):
         super(ReverseFlow, self).__init__()
         self.permute = torch.arange(dim-1, -1, -1)
         self.inverse = torch.argsort(self.permute)
+        self.domain   = constraints.real
+        self.codomain = constraints.real
 
     def _call(self, z):
         return z[:, self.permute]
