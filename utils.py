@@ -13,4 +13,4 @@ def loss(density, z0, log_jacobians):
        '''
 
     sum_of_log_jacobians = sum(log_jacobians)
-    return (sum_of_log_jacobians - torch.log(density(z0) + 1e-9)).mean()
+    return (sum_of_log_jacobians - density.log_prob(z0)).mean()
