@@ -30,7 +30,7 @@ class Flow(transform.Transform, nn.Module):
 
 class AffineCouplingFlow(Flow):
     '''paper - https://arxiv.org/pdf/1605.08803.pdf'''
-    def __init__(self,dim, n_hidden=64, n_layers=3, activation=nn.ReLU):
+    def __init__(self,dim,device, n_hidden=64, n_layers=3, activation=nn.ReLU):
         '''s and t share input only'''
         super(AffineCouplingFlow,self).__init__()
         '''d - first d dimentions go inside s and t networks, 
@@ -43,6 +43,7 @@ class AffineCouplingFlow(Flow):
         '''domain and codomain of the transformation f'''
         self.domain   = constraints.real
         self.codomain = constraints.real
+        self.device   = device
 
     def transform_net(self, nin, nout, nhidden, nlayer, activation):
         net = nn.ModuleList()
@@ -93,12 +94,13 @@ class AffineCouplingFlow(Flow):
 
 class ReverseFlow(Flow):
 
-    def __init__(self, dim):
+    def __init__(self, dim,device):
         super(ReverseFlow, self).__init__()
         self.permute = torch.arange(dim-1, -1, -1)
         self.inverse = torch.argsort(self.permute)
         self.domain   = constraints.real
         self.codomain = constraints.real
+        self.device   = device
 
     def _call(self, z):
         return z[:, self.permute]
@@ -108,7 +110,7 @@ class ReverseFlow(Flow):
 
     def log_abs_det_jacobian(self, *args):
         z = args[0]
-        return torch.zeros(z.shape[0], 1)
+        return torch.zeros(z.shape[0], 1,device=self.device)
 
 
 class Norm_flow_model(nn.Module):
@@ -121,14 +123,14 @@ class Norm_flow_model(nn.Module):
       flow_length - number of blocks
       density - random number, i.e density function of z'''
 
-      def __init__(self,dim,blocks,density):
+      def __init__(self,dim,blocks,density,device):
           super().__init__()
 
           '''List containing [f1,f2,f3,f4,...,f_n], where f is the flow transform'''
           bijectros = []
 
           for b_flow in blocks:
-              bijectros.append(b_flow(dim))
+              bijectros.append(b_flow(dim,device))
 
           '''list of flow objects
           represents [f_n,f_(n-1),...,f_1] sequence  '''
