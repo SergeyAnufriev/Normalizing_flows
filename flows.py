@@ -89,7 +89,7 @@ class AffineCouplingFlow(Flow):
         z   = args[0]
         z_d = z[:,:self.d]
         '''summation under equation 6'''
-        return torch.sum(torch.exp(self.shift_log_scale(z_d))[:, 1:],dim=-1)
+        return torch.sum(self.shift_log_scale(z_d)[:, 1:],dim=-1)
 
 
 class ReverseFlow(Flow):
@@ -137,7 +137,7 @@ class Norm_flow_model(nn.Module):
           self.bijectors = nn.ModuleList(bijectros)
 
           '''Normilizing flow probability transformation
-          reprsents [f_1,f_2,...,f_n]'''
+          reprsents [f_1,f_2,...,f_n](inv)'''
           self.transforms = transform.ComposeTransform(bijectros)
 
           '''density of variable z_0, with known density function, usually mult var gauss with diag covar matrix'''
@@ -146,8 +146,6 @@ class Norm_flow_model(nn.Module):
           '''density of target variable z_n = f_n * f_(n_1) **** f_1(z_0)'''
           self.final_density = distrib.TransformedDistribution(density, self.transforms)
 
-          '''list : [log_det_df_i/dz_(i-1) for i in range n] , where n is the flow number'''
-          self.log_det = []
 
       def forward(self,x):
           '''Input: Real data sample X
@@ -158,7 +156,8 @@ class Norm_flow_model(nn.Module):
 
           z = x
           l = len(self.bijectors)
+          list_log_det = []
           for i in range(l):
               z = self.bijectors[l-1-i]._inverse(z)
-              self.log_det.append(self.bijectors[l-1-i].log_abs_det_jacobian(z))
-          return z, self.log_det
+              list_log_det.append(self.bijectors[l-1-i].log_abs_det_jacobian(z))
+          return z, list_log_det
