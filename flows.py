@@ -59,14 +59,14 @@ class AffineCouplingFlow(Flow):
           '''
 
         '''split input by dimention, Paper equation 4'''
-        x_d, z_D = z[:, :self.d], z[:, self.d:]
+        z_d, z_D = z[:, :self.d], z[:, self.d:] # z_1:d, z_d+1:D
         '''Paper equation 5'''
-        net_out           = self.shift_log_scale(x_d)
-        shift             = net_out[:, :1]
-        log_scale         = net_out[:, 1:]
+        net_out           = self.shift_log_scale(z_d)
+        shift             = net_out[:, :1]  #T(z_1:d)
+        log_scale         = net_out[:, 1:]  #S(z_1:d)
 
         z_transformed = z_D * torch.exp(log_scale) + shift
-        return torch.cat((x_d, z_transformed), dim = 1)
+        return torch.cat((z_d, z_transformed), dim = 1)
 
     def _inverse(self,x):
         ''' Inverse transformation
@@ -74,14 +74,14 @@ class AffineCouplingFlow(Flow):
           Output: Data in latent space with known prior distr'''
 
         '''split input by dimention, paper equation 8a'''
-        z_d, x_D = x[:, :self.d], x[:, self.d:]
+        x_d, x_D = x[:, :self.d], x[:, self.d:] # x_1:d, x_d+1:D
         '''paper equation 8b'''
-        net_out           = self.shift_log_scale(z_d)
-        shift             =  net_out[:, :1]
-        log_scale         =  net_out[:, 1:]
+        net_out           = self.shift_log_scale(x_d)
+        shift             =  net_out[:, :1] #T(x_1:d)
+        log_scale         =  net_out[:, 1:] #S(x_1:d)
 
-        x_transformed = (x_D-shift)/log_scale
-        return torch.cat((z_d, x_transformed), dim = 1)
+        x_transformed = (x_D-shift)/torch.exp(log_scale)
+        return torch.cat((x_d, x_transformed), dim = 1)
 
     def log_abs_det_jacobian(self,*args):
         '''Input: Latent variable from known prior distr

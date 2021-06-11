@@ -1,5 +1,3 @@
-import torch
-
 def loss(density, z0, log_jacobians):
 
     '''Inputs:
