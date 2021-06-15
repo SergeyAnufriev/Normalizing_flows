@@ -83,10 +83,10 @@ class AffineCouplingFlow(Flow):
         x_transformed = (x_D-shift)/torch.exp(log_scale)
         return torch.cat((x_d, x_transformed), dim = 1)
 
-    def log_abs_det_jacobian(self,*args):
+    def log_abs_det_jacobian(self,z,*args):
         '''Input: Latent variable from known prior distr
           Output:log_det(df_dz), paper -> summation under equation 6'''
-        z   = args[0]
+        #z   = args[0]
         z_d = z[:,:self.d]
         '''summation under equation 6'''
         return torch.sum(self.shift_log_scale(z_d)[:, 1:],dim=-1)
@@ -108,8 +108,8 @@ class ReverseFlow(Flow):
     def _inverse(self, z):
         return z[:, self.inverse]
 
-    def log_abs_det_jacobian(self, *args):
-        z = args[0]
+    def log_abs_det_jacobian(self, z,*args):
+        #z = args[0]
         return torch.zeros(z.shape[0], 1,device=self.device)
 
 
