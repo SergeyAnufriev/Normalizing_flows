@@ -13,7 +13,7 @@ n_samples  = 128
 learning_rate = 1e-4
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-ref_distr    = distrib.MultivariateNormal(torch.zeros(2), torch.eye(2))
+ref_distr    = distrib.MultivariateNormal(torch.zeros(2,device=device), torch.eye(2,device=device))
 Blocks       = [AffineCouplingFlow,ReverseFlow]*5+[AffineCouplingFlow]
 model        = Norm_flow_model(2,Blocks,ref_distr,device)
 optimizer    = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -28,6 +28,6 @@ for i in range(epochs):
     l.backward()
     optimizer.step()
 
-    if i%plot_it:
+    if i%plot_it==0:
         print('Loss',l)
 

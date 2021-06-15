@@ -113,6 +113,8 @@ class ReverseFlow(Flow):
         return torch.zeros(z.shape[0], 1,device=self.device)
 
 
+
+
 class Norm_flow_model(nn.Module):
 
       '''Main model class, assambled
