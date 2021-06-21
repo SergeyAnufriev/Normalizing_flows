@@ -160,6 +160,7 @@ class Norm_flow_model(nn.Module):
           l = len(self.bijectors)
           list_log_det = []
           for i in range(l):
+              list_log_det.append(self.bijectors[l - 1 - i].log_abs_det_jacobian(z))
               z = self.bijectors[l-1-i]._inverse(z)
-              list_log_det.append(self.bijectors[l-1-i].log_abs_det_jacobian(z))
+              #list_log_det.append(self.bijectors[l-1-i].log_abs_det_jacobian(z))
           return z, list_log_det
