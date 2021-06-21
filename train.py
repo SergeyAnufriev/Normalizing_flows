@@ -18,6 +18,8 @@ Blocks       = [AffineCouplingFlow,ReverseFlow]*5+[AffineCouplingFlow]
 model        = Norm_flow_model(2,Blocks,ref_distr,device)
 optimizer    = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+print(model.bijectors[0].shift_log_scale)
+'''
 for i in range(epochs):
     optimizer.zero_grad()
     noisy_moons = datasets.make_moons(n_samples=128, noise=.05)[0].astype(np.float32)
@@ -30,4 +32,4 @@ for i in range(epochs):
 
     if i%plot_it==0:
         print('Loss',l)
-
+'''
