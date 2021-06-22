@@ -90,7 +90,7 @@ class AffineCouplingFlow(Flow):
         z_d = z[:,:self.d]
         '''summation under equation 6'''
         log_det = torch.sum(self.shift_log_scale(z_d)[:, 1:],dim=-1)
-        return log_det.T
+        return log_det.view(z.size())
 
 
 class ReverseFlow(Flow):
