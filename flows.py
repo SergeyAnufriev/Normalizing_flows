@@ -89,7 +89,8 @@ class AffineCouplingFlow(Flow):
         #z   = args[0]
         z_d = z[:,:self.d]
         '''summation under equation 6'''
-        return torch.sum(self.shift_log_scale(z_d)[:, 1:],dim=-1)
+        log_det = torch.sum(self.shift_log_scale(z_d)[:, 1:],dim=-1)
+        return log_det.T
 
 
 class ReverseFlow(Flow):
@@ -160,6 +161,7 @@ class Norm_flow_model(nn.Module):
           l = len(self.bijectors)
           list_log_det = []
           for i in range(l):
-              z = self.bijectors[l-1-i]._inverse(z)
+              z ,log_det= self.bijectors[l-1-i]._inverse(z)
               list_log_det.append(self.bijectors[l-1-i].log_abs_det_jacobian(z))
+
           return z, list_log_det
