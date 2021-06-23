@@ -22,7 +22,7 @@ class Flow(transform.Transform, nn.Module):
     def init_parameters(self):
         '''Work in progress'''
         for param in self.parameters():
-            param.data.uniform_(-0.01, 0.01)
+            param.data.uniform_(-1.0, 1.0)
     # Hacky hash bypass
     def __hash__(self):
         return nn.Module.__hash__(self)
