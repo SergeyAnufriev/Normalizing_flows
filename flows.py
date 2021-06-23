@@ -49,7 +49,8 @@ class AffineCouplingFlow(Flow):
         net = nn.ModuleList()
         for l in range(nlayer):
             net.append(nn.Linear(l==0 and nin or nhidden, l==nlayer-1 and nout or nhidden))
-            net.append(activation())
+            if l<nlayer-1:
+                net.append(activation())
         return nn.Sequential(*net)
 
     def _call(self,z):
